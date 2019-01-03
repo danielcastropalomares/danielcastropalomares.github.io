@@ -1,5 +1,5 @@
 ---
-layout: mrrobot
+layout: default
 title: CTF MR Robot
 ---
 
