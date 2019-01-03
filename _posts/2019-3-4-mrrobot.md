@@ -1,9 +1,8 @@
 ---
-layout: default
+layout: post
 title: CTF MR Robot
 ---
 
-<h1>Mr Robot</h1>
 En este caso me hizo gracia el CTF de Mr. Robot, ya que hace unos guiños a la serie que tantos conocemos.
 
 <img class="aligncenter" src="https://cdn-images-1.medium.com/max/1200/1*VytWprd2ulmw2eIwnHMNJQ.jpeg" width="581" height="291" />
